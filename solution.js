@@ -22,23 +22,35 @@ const objectToList = obj => {
 };
 
 const deserialize = obj => {
-  const mappedResult = Object.entries(obj).map(([key, value]) => {
+  let rows = [];
+  let rowName = "";
+  let total = {};
+  Object.keys(obj).forEach((key, index) => {
     const splitKey = key.split("_");
-    if (splitKey.length < 2) {
-      const total = { [splitKey]: value };
-      return total;
+    //get total
+    if (splitKey.length === 1) {
+      total = { [splitKey[0]]: obj[splitKey] };
     }
-    const rowName = splitKey[0].slice(0, -1);
-    const row = {
-      [rowName]: {
-        [splitKey[1]]: value
+    //get rows
+    if (splitKey.length === 2) {
+      rowName = splitKey[0].slice(0, -1);
+      if (!rows.find(row => [splitKey[0]] in row)) {
+        rows.push({ [splitKey[0]]: { [splitKey[1]]: obj[key] } });
+      } else {
+        rows.forEach(row => {
+          if ([splitKey[0]] in row) {
+            row[splitKey[0]][splitKey[1]] = obj[key];
+          }
+        });
       }
-    };
-    return row;
+    }
   });
-
-  const newObj = Object.assign({}, ...mappedResult);
-  return JSON.parse(JSON.stringify(newObj));
+  const values = rows.map(row => Object.values(row));
+  const result = {
+    [rowName]: values.reverse().flat(),
+    [Object.keys(total)[0]]: Object.values(total)[0]
+  };
+  return result;
 };
 
 export { add, listToObject, objectToList, deserialize };
